@@ -8,6 +8,12 @@
 * Total Funds
 * Funds on Hold
 * Funds Processing
+* eBay Sales Today
+* eBay Sales This Week
+* eBay Sales This Month
+* eBay Refunds Today
+* eBay Refunds This Week
+* eBay Refunds This Month
 
 ### Manual Setup
 
