@@ -6,8 +6,8 @@ OAUTH2_AUTHORIZE = "https://auth.ebay.com/oauth2/authorize"
 OAUTH2_TOKEN = "https://api.ebay.com/identity/v1/oauth2/token"
 # Request fulfillment and finances scopes so financial endpoints work
 SCOPES = (
-    "https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly%20"
-    "https://api.ebay.com/oauth/api_scope/sell.finances"
+    "https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly",
+    "https://api.ebay.com/oauth/api_scope/sell.finances",
 )
 UNFULFILLED_ORDERS_URL = "https://api.ebay.com/sell/fulfillment/v1/order?filter=orderfulfillmentstatus:%7BNOT_STARTED%7CIN_PROGRESS%7D"
 SELLER_FUNDS_SUMMARY_URL = "https://apiz.ebay.com/sell/finances/v1/seller_funds_summary"

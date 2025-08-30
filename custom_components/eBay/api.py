@@ -185,8 +185,9 @@ class EbayImplementation(config_entry_oauth2_flow.LocalOAuth2Implementation):
             )
             .update_query(self.extra_authorize_data)
         )
-        # Need to add scopes query, however YARL will not incode spaces correctly. Must use %20 inbetween each scope.
-        qry = qry + f"&scope={SCOPES}"
+        # Need to add scopes query, however YARL will not encode spaces correctly.
+        scope_param = "%20".join(SCOPES)
+        qry = f"{qry}&scope={scope_param}"
         return qry
 
     async def _token_request(self, data: dict) -> dict:
@@ -222,8 +223,9 @@ class EbayImplementation(config_entry_oauth2_flow.LocalOAuth2Implementation):
             "grant_type": "refresh_token",
             "client_id": self.client_id,
             "refresh_token": token["refresh_token"],
-            "scope": SCOPES,
         }
+
+        data["scope"] = " ".join(SCOPES)
 
         new_token = await self._token_request(data)
         return {**token, **new_token}
