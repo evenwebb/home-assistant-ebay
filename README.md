@@ -64,6 +64,16 @@ ebay:
 - #### You should now see the sensors within Home Assistant.
 
 
+### Troubleshooting
+
+* **user_rejected_authorize**
+  * eBay returns this when the OAuth request is rejected.
+  * Confirm the "Your auth accepted URL" in the eBay developer portal is `https://<your-home-assistant-url>/auth/external/callback`.
+  * Ensure the `redirect_uri` in `configuration.yaml` uses the RuName from step 16 rather than the callback URL.
+  * Click **I Agree** on the eBay consent screen when prompted.
+  * Any mismatch or skipped confirmation will cause eBay to redirect back with `user_rejected_authorize`.
+
+
 ##### Marketplace Account Deletion Warning
 I don't actually know whether or not you should be marking the exempted from marketplace account deletion (Mentioned in step 6). The only data we are saving is your own auth token the numbers saved within the sensors. We aren't saving any buyer data and if you delete your own ebay account you should understand that you would also need to then delete the integration. 
 
