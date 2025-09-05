@@ -13,20 +13,6 @@
 * Listing impressions
 * Listing page views
 * Listing click-through rate
-* Available Funds
-* Total Funds
-* Funds on Hold
-* Funds Processing
-* eBay Sales Today
-* eBay Sales This Week
-* eBay Sales This Month
-* eBay Refunds Today
-* eBay Refunds This Week
-* eBay Refunds This Month
-
-### Finances API Access
-
-eBay requires explicit approval for the Finances API. If your developer keyset hasn’t been whitelisted, eBay returns a 403 with a “Master Key” message. Contact eBay Developer Support to have Finances API enabled for your keyset. If you don’t have this approval you can still use the order awaiting dispatch and orders due today sensors.
 
 ### Manual Setup
 

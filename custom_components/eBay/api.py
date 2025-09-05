@@ -2,7 +2,6 @@
 from typing import Any, cast
 from aiohttp import ClientSession
 import base64
-from datetime import timedelta
 from yarl import URL
 
 from homeassistant.core import HomeAssistant
@@ -14,8 +13,6 @@ from .const import (
     UNFULFILLED_ORDERS_URL,
     FULFILLED_ORDERS_URL,
     CANCELLED_ORDERS_URL,
-    SELLER_FUNDS_SUMMARY_URL,
-    TRANSACTION_SUMMARY_URL,
     RETURN_REQUESTS_URL,
     CANCELLATION_REQUESTS_URL,
     ACTIVE_LISTINGS_URL,
@@ -36,16 +33,6 @@ async def get_ebay_data(access_token):
     listing_impressions = 0
     listing_page_views = 0
     click_through_rate = 0
-    available_funds = 0
-    funds_on_hold = 0
-    processing_funds = 0
-    total_funds = 0
-    sales_today = 0
-    sales_week = 0
-    sales_month = 0
-    refunds_today = 0
-    refunds_week = 0
-    refunds_month = 0
 
     async with ClientSession() as session:
 
@@ -136,56 +123,61 @@ async def get_ebay_data(access_token):
             SELLER_FUNDS_SUMMARY_URL,
             headers={"Authorization": "Bearer " + access_token},
         )
-        if funds_reponse.status == 200:
-            data = await funds_reponse.json()
-            if "availableFunds" in data:
-                available_funds = data["availableFunds"]["value"]
-            if "fundsOnHold" in data:
-                funds_on_hold = data["fundsOnHold"]["value"]
-            if "processingFunds" in data:
-                processing_funds = data["processingFunds"]["value"]
-            if "totalFunds" in data:
-                total_funds = data["totalFunds"]["value"]
+        if fulfilled_response.status == 200:
+            data = await fulfilled_response.json()
+            fulfilled_total = data.get("total", 0)
 
-        async def _fetch_summary(start, end):
-            url = (
-                f"{TRANSACTION_SUMMARY_URL}?filter="
-                f"transactionDate:[{start}..{end}]"
-            )
-            resp = await session.get(
-                url, headers={"Authorization": "Bearer " + access_token}
-            )
-            sale_total = 0
-            refund_total = 0
-            if resp.status == 200:
-                summary = await resp.json()
-                for item in summary.get("transactionSummaries", []):
-                    amount = float(item.get("totalAmount", {}).get("value", 0))
-                    t_type = item.get("transactionType")
-                    if t_type == "SALE":
-                        sale_total = amount
-                    elif t_type == "REFUND":
-                        refund_total = abs(amount)
-            return sale_total, refund_total
-
-        now = dt.utcnow()
-        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        week_start = today_start - timedelta(days=now.weekday())
-        month_start = today_start.replace(day=1)
-
-        def _fmt(dtime):
-            return dtime.isoformat().replace("+00:00", "Z")
-
-        sales_today, refunds_today = await _fetch_summary(
-            _fmt(today_start), _fmt(now)
+        cancelled_response = await session.get(
+            CANCELLED_ORDERS_URL,
+            headers={"Authorization": "Bearer " + access_token},
         )
-        sales_week, refunds_week = await _fetch_summary(
-            _fmt(week_start), _fmt(now)
-        )
-        sales_month, refunds_month = await _fetch_summary(
-            _fmt(month_start), _fmt(now)
-        )
+        if cancelled_response.status == 200:
+            data = await cancelled_response.json()
+            cancelled_total = data.get("total", 0)
 
+        return_response = await session.get(
+            RETURN_REQUESTS_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if return_response.status == 200:
+            data = await return_response.json()
+            return_requests = data.get("total", 0)
+
+        cancellation_req_response = await session.get(
+            CANCELLATION_REQUESTS_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if cancellation_req_response.status == 200:
+            data = await cancellation_req_response.json()
+            cancellation_requests = data.get("total", 0)
+
+        listings_response = await session.get(
+            ACTIVE_LISTINGS_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if listings_response.status == 200:
+            data = await listings_response.json()
+            active_listings = data.get("total", 0)
+
+        traffic_response = await session.get(
+            TRAFFIC_REPORT_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if traffic_response.status == 200:
+            data = await traffic_response.json()
+            for record in data.get("records", []):
+                metrics = {
+                    m.get("metricName"): float(m.get("value", 0))
+                    for m in record.get("metricValues", [])
+                }
+                listing_impressions += int(metrics.get("LISTING_IMPRESSION", 0))
+                listing_page_views += int(
+                    metrics.get("LISTING_PAGE_VIEWS", metrics.get("LISTING_VIEWS", 0))
+                )
+            if listing_impressions:
+                click_through_rate = round(
+                    (listing_page_views / listing_impressions) * 100, 2
+                )
         await session.close()
     return {
         "ebay_orders_due_today": today,
@@ -199,16 +191,6 @@ async def get_ebay_data(access_token):
         "ebay_listing_impressions": listing_impressions,
         "ebay_listing_page_views": listing_page_views,
         "ebay_click_through_rate": click_through_rate,
-        "ebay_available_funds": available_funds,
-        "ebay_funds_on_hold": funds_on_hold,
-        "ebay_processing_funds": processing_funds,
-        "ebay_total_funds": total_funds,
-        "ebay_sales_today": sales_today,
-        "ebay_sales_this_week": sales_week,
-        "ebay_sales_this_month": sales_month,
-        "ebay_refunds_today": refunds_today,
-        "ebay_refunds_this_week": refunds_week,
-        "ebay_refunds_this_month": refunds_month,
     }
 
 
