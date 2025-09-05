@@ -12,8 +12,14 @@ import homeassistant.util.dt as dt
 from .const import (
     SCOPES,
     UNFULFILLED_ORDERS_URL,
+    FULFILLED_ORDERS_URL,
+    CANCELLED_ORDERS_URL,
     SELLER_FUNDS_SUMMARY_URL,
     TRANSACTION_SUMMARY_URL,
+    RETURN_REQUESTS_URL,
+    CANCELLATION_REQUESTS_URL,
+    ACTIVE_LISTINGS_URL,
+    TRAFFIC_REPORT_URL,
 )
 
 
@@ -21,6 +27,15 @@ async def get_ebay_data(access_token):
 
     today = 0
     total = 0
+    awaiting_payment = 0
+    fulfilled_total = 0
+    cancelled_total = 0
+    return_requests = 0
+    cancellation_requests = 0
+    active_listings = 0
+    listing_impressions = 0
+    listing_page_views = 0
+    click_through_rate = 0
     available_funds = 0
     funds_on_hold = 0
     processing_funds = 0
@@ -41,6 +56,8 @@ async def get_ebay_data(access_token):
         if order_response.status == 200:
             data = await order_response.json()
             for order in data["orders"]:
+                if order.get("orderPaymentStatus") != "PAID":
+                    awaiting_payment += 1
                 for lineItem in order["lineItems"]:
                     ship_by_date = dt.parse_datetime(
                         lineItem["lineItemFulfillmentInstructions"]["shipByDate"]
@@ -55,6 +72,66 @@ async def get_ebay_data(access_token):
                         today = today + 1
                         break
             total = data["total"]
+
+        fulfilled_response = await session.get(
+            FULFILLED_ORDERS_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if fulfilled_response.status == 200:
+            data = await fulfilled_response.json()
+            fulfilled_total = data.get("total", 0)
+
+        cancelled_response = await session.get(
+            CANCELLED_ORDERS_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if cancelled_response.status == 200:
+            data = await cancelled_response.json()
+            cancelled_total = data.get("total", 0)
+
+        return_response = await session.get(
+            RETURN_REQUESTS_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if return_response.status == 200:
+            data = await return_response.json()
+            return_requests = data.get("total", 0)
+
+        cancellation_req_response = await session.get(
+            CANCELLATION_REQUESTS_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if cancellation_req_response.status == 200:
+            data = await cancellation_req_response.json()
+            cancellation_requests = data.get("total", 0)
+
+        listings_response = await session.get(
+            ACTIVE_LISTINGS_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if listings_response.status == 200:
+            data = await listings_response.json()
+            active_listings = data.get("total", 0)
+
+        traffic_response = await session.get(
+            TRAFFIC_REPORT_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if traffic_response.status == 200:
+            data = await traffic_response.json()
+            for record in data.get("records", []):
+                metrics = {
+                    m.get("metricName"): float(m.get("value", 0))
+                    for m in record.get("metricValues", [])
+                }
+                listing_impressions += int(metrics.get("LISTING_IMPRESSION", 0))
+                listing_page_views += int(
+                    metrics.get("LISTING_PAGE_VIEWS", metrics.get("LISTING_VIEWS", 0))
+                )
+            if listing_impressions:
+                click_through_rate = round(
+                    (listing_page_views / listing_impressions) * 100, 2
+                )
         funds_reponse = await session.get(
             SELLER_FUNDS_SUMMARY_URL,
             headers={"Authorization": "Bearer " + access_token},
@@ -113,6 +190,15 @@ async def get_ebay_data(access_token):
     return {
         "ebay_orders_due_today": today,
         "ebay_total_unfulfilled_orders": total,
+        "ebay_orders_awaiting_payment": awaiting_payment,
+        "ebay_fulfilled_orders": fulfilled_total,
+        "ebay_cancelled_orders": cancelled_total,
+        "ebay_return_requests": return_requests,
+        "ebay_cancellation_requests": cancellation_requests,
+        "ebay_active_listings": active_listings,
+        "ebay_listing_impressions": listing_impressions,
+        "ebay_listing_page_views": listing_page_views,
+        "ebay_click_through_rate": click_through_rate,
         "ebay_available_funds": available_funds,
         "ebay_funds_on_hold": funds_on_hold,
         "ebay_processing_funds": processing_funds,
