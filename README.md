@@ -4,6 +4,15 @@
 ### Adds the following sensors
 * Current orders needing to be shipped out
 * Current orders needing to be shipped out <strong>today</strong>
+* Orders awaiting payment
+* Fulfilled orders
+* Cancelled orders
+* Return requests
+* Cancellation requests
+* Active listings
+* Listing impressions
+* Listing page views
+* Listing click-through rate
 * Available Funds
 * Total Funds
 * Funds on Hold
