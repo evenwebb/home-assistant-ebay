@@ -119,6 +119,65 @@ async def get_ebay_data(access_token):
                 click_through_rate = round(
                     (listing_page_views / listing_impressions) * 100, 2
                 )
+        funds_reponse = await session.get(
+            SELLER_FUNDS_SUMMARY_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if fulfilled_response.status == 200:
+            data = await fulfilled_response.json()
+            fulfilled_total = data.get("total", 0)
+
+        cancelled_response = await session.get(
+            CANCELLED_ORDERS_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if cancelled_response.status == 200:
+            data = await cancelled_response.json()
+            cancelled_total = data.get("total", 0)
+
+        return_response = await session.get(
+            RETURN_REQUESTS_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if return_response.status == 200:
+            data = await return_response.json()
+            return_requests = data.get("total", 0)
+
+        cancellation_req_response = await session.get(
+            CANCELLATION_REQUESTS_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if cancellation_req_response.status == 200:
+            data = await cancellation_req_response.json()
+            cancellation_requests = data.get("total", 0)
+
+        listings_response = await session.get(
+            ACTIVE_LISTINGS_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if listings_response.status == 200:
+            data = await listings_response.json()
+            active_listings = data.get("total", 0)
+
+        traffic_response = await session.get(
+            TRAFFIC_REPORT_URL,
+            headers={"Authorization": "Bearer " + access_token},
+        )
+        if traffic_response.status == 200:
+            data = await traffic_response.json()
+            for record in data.get("records", []):
+                metrics = {
+                    m.get("metricName"): float(m.get("value", 0))
+                    for m in record.get("metricValues", [])
+                }
+                listing_impressions += int(metrics.get("LISTING_IMPRESSION", 0))
+                listing_page_views += int(
+                    metrics.get("LISTING_PAGE_VIEWS", metrics.get("LISTING_VIEWS", 0))
+                )
+            if listing_impressions:
+                click_through_rate = round(
+                    (listing_page_views / listing_impressions) * 100, 2
+                )
         await session.close()
     return {
         "ebay_orders_due_today": today,

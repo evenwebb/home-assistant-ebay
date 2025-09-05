@@ -80,4 +80,50 @@ EBAY_QUERIES_SENSOR: tuple[SensorEntityDescription, ...] = (
         icon="mdi:cursor-pointer",
         native_unit_of_measurement="%",
     ),
+    SensorEntityDescription(
+        key="ebay_orders_awaiting_payment",
+        name="eBay Orders Awaiting Payment",
+        icon="mdi:cash-clock",
+    ),
+    SensorEntityDescription(
+        key="ebay_fulfilled_orders",
+        name="eBay Fulfilled Orders",
+        icon="mdi:package-variant-closed-check",
+    ),
+    SensorEntityDescription(
+        key="ebay_cancelled_orders",
+        name="eBay Cancelled Orders",
+        icon="mdi:package-variant-closed-remove",
+    ),
+    SensorEntityDescription(
+        key="ebay_return_requests",
+        name="eBay Return Requests",
+        icon="mdi:clipboard-list",
+    ),
+    SensorEntityDescription(
+        key="ebay_cancellation_requests",
+        name="eBay Cancellation Requests",
+        icon="mdi:cancel",
+    ),
+    SensorEntityDescription(
+        key="ebay_active_listings",
+        name="eBay Active Listings",
+        icon="mdi:storefront-outline",
+    ),
+    SensorEntityDescription(
+        key="ebay_listing_impressions",
+        name="eBay Listing Impressions",
+        icon="mdi:eye-outline",
+    ),
+    SensorEntityDescription(
+        key="ebay_listing_page_views",
+        name="eBay Listing Page Views",
+        icon="mdi:eye",
+    ),
+    SensorEntityDescription(
+        key="ebay_click_through_rate",
+        name="eBay Click Through Rate",
+        icon="mdi:cursor-pointer",
+        native_unit_of_measurement="%",
+    ),
 )
